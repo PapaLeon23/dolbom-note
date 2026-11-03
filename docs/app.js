@@ -156,10 +156,11 @@
     $('futureHours').textContent=hours(futureShifts);
     $('monthTitle').textContent=`${state.month.getFullYear()}년 ${state.month.getMonth()+1}월`;
     $('cutoffInfo').textContent=periodLabel();
-    $('childrenLabel').textContent=person?(assignedNames().join(' · ')||'연결된 아이 없음'):'연결된 시터 없음';
-    $('childrenCount').textContent=`배정된 돌봄 대상 · ${assignedIds().length}명`;
-    $('mappingInfo').textContent=person?`${person.name} · 연결된 아이 ${assignedIds().length}명 · 시급 ${money(rate)}`:'「설정 → 시터 관리」에서 로그인 UID를 연결해주세요.';
-    $('basePay').textContent=money(rate*2);$('extraPay').textContent=money(rate/2);
+    // 배정된 아이만 이름으로 표시합니다. (미배정 아이의 번호 아이콘은 표시하지 않습니다.)
+    const careNames=person?assignedNames():[];
+    $('childrenLabel').innerHTML=careNames.length
+      ?careNames.map(name=>`<span class="care-child-pill">${escapeHtml(name)}</span>`).join('')
+      :'<span class="care-child-empty">연결된 아이 없음</span>';
     renderPaymentHistory();
     $('calendarTip').textContent='달력은 표시 월 전체, 정산은 상단의 기간 기준입니다.';
     $('listCount').textContent=String(shifts.length);
