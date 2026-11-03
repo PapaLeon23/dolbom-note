@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?rev=7" />
+  <link rel="stylesheet" href="./styles.css?rev=8" />
   <title>지호-수호 돌봄노트 | 일정·급여·전달사항 관리</title>
 </head>
 <body>
@@ -130,12 +130,6 @@
           <div id="calendar" class="calendar" aria-label="월간 돌봄 달력"></div>
           <div class="calendar-footer"><div class="legend"><span><i class="legend-dot planned"></i>돌봄 예정</span><span><i class="legend-dot completed"></i>돌봄 완료</span><span><i class="legend-dot paid"></i>급여 지급</span></div><span id="calendarTip">날짜를 눌러 일정을 추가·수정하세요</span></div>
         </section>
-      <section class="panel list-panel">
-        <div class="list-top"><div><div class="section-kicker">SHIFT LIST</div><h2>정산기간 돌봄 상세 <span id="listCount" class="list-count">0</span></h2></div><button id="csvButton" class="btn btn-quiet btn-small" type="button"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3h16v-3"/></svg> CSV 내보내기</button></div>
-        <div class="shift-table-head"><span>돌봄 날짜</span><span>돌봄 유형</span><span>돌봄 시간</span><span>급여</span><span>상태</span><span></span></div>
-        <div id="shiftList" class="shift-list"></div>
-      </section>
-
         </div>
         <aside class="side-col">
           <section class="panel info-panel" aria-label="우리집 돌봄 기준">
@@ -166,6 +160,13 @@
           </section>
         </aside>
       </div>
+
+      <section class="panel list-panel">
+        <div class="list-top"><div><div class="section-kicker">SHIFT LIST</div><h2>정산기간 돌봄 상세 <span id="listCount" class="list-count">0</span></h2></div><button id="csvButton" class="btn btn-quiet btn-small" type="button"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3h16v-3"/></svg> CSV 내보내기</button></div>
+        <div class="shift-table-head"><span>돌봄 날짜</span><span>돌봄 유형</span><span>돌봄 시간</span><span>급여</span><span>상태</span><span></span></div>
+        <div id="shiftList" class="shift-list"></div>
+      </section>
+
 
       <footer class="site-footer">지호-수호 돌봄노트 <span>✳</span> 아이들의 하루를 함께 기록해요.</footer>
     </main>
