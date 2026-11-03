@@ -600,7 +600,6 @@
   }
   // Event listeners
   $('prevMonth').addEventListener('click',()=>changeMonth(-1));$('nextMonth').addEventListener('click',()=>changeMonth(1));
-  $('todayButton').addEventListener('click',()=>{state.month=settlementMonthForToday();render();});
   $('activeSitter').addEventListener('change',e=>{if(isAdmin())selectSitter(e.target.value);});
   $('calendar').addEventListener('click',e=>{const x=e.target.closest('[data-date]');if(x)openDay(x.dataset.date);});
   $('shiftList').addEventListener('click',e=>{const x=e.target.closest('[data-date]');if(x)openDay(x.dataset.date);});
