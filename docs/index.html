@@ -3,18 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-title" content="지호-수호 돌봄노트" />
+  <meta property="og:title" content="지호-수호 돌봄노트" />
+  <meta property="og:description" content="지호와 수호의 돌봄 일정·급여·전달사항" />
+  <meta property="og:type" content="website" />
   <meta name="theme-color" content="#f7f9fb" />
   <meta name="description" content="우리집 시터 돌봄 일정과 급여를 관리하는 가족용 캘린더" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="manifest" href="./manifest.webmanifest?rev=4" />
   <link rel="icon" type="image/png" href="./icons/icon-192.png" />
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css" />
-  <title>돌봄노트 v3.3 | 가족 돌봄 일정·급여·전달사항 관리</title>
+  <link rel="stylesheet" href="./styles.css?rev=4" />
+  <title>지호-수호 돌봄노트 | 일정·급여·전달사항 관리</title>
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -23,7 +27,7 @@
     <div class="auth-card">
       <div class="brand-mark large" aria-hidden="true"><span>♥</span></div>
       <div class="eyebrow">FAMILY WORKSPACE</div>
-      <h1>돌봄노트에<br />오신 것을 환영합니다</h1>
+      <h1>지호-수호 돌봄노트에<br />오신 것을 환영합니다</h1>
       <p class="auth-desc">일정과 급여를 안전하게 확인하려면 로그인해주세요.</p>
       <form id="loginForm" autocomplete="on">
         <label class="field-label" for="loginEmail">이메일</label>
@@ -53,7 +57,7 @@
       <div class="header-inner">
         <div class="brand">
           <div class="brand-mark" aria-hidden="true"><span>♥</span></div>
-          <div class="brand-copy"><strong>돌봄노트</strong><small>우리 가족의 돌봄 기록</small></div>
+          <div class="brand-copy"><strong>지호-수호 돌봄노트</strong><small>우리 가족의 돌봄 기록</small></div>
         </div>
         <div class="header-actions">
           <div id="demoSwitch" class="demo-switch" hidden>
@@ -75,14 +79,19 @@
           <p id="subtitle">두 아이의 하원 일정부터 돌봄 시간, 급여까지 한곳에서 관리하세요.</p>
         </div>
         <div class="heading-actions" id="adminTools" hidden>
-          <button id="mappingButton" class="btn btn-quiet" type="button"><span>시터·아이 관리</span></button><button id="noticeButton" class="btn btn-quiet" type="button"><span>전달사항 관리</span></button>
+          <button id="noticeButton" class="btn btn-quiet" type="button"><span>전달사항 관리</span></button>
           <button id="medicationButton" class="btn btn-quiet" type="button"><span>투약 요청 관리</span></button>
           <button id="settingsButton" class="btn btn-quiet" type="button"><svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM19.4 15a1.8 1.8 0 0 0 .36 1.98l.07.07-2.1 2.1-.07-.07A1.8 1.8 0 0 0 15.7 18a1.8 1.8 0 0 0-1.7 1.3V20h-4v-.1A1.8 1.8 0 0 0 8.3 18a1.8 1.8 0 0 0-1.97 1.08l-.06.07-2.1-2.1.07-.07A1.8 1.8 0 0 0 4.6 15 1.8 1.8 0 0 0 3.3 13.3H3v-2.6h.3A1.8 1.8 0 0 0 4.6 9a1.8 1.8 0 0 0-.36-1.98l-.07-.07 2.1-2.1.06.07A1.8 1.8 0 0 0 8.3 6a1.8 1.8 0 0 0 1.7-1.3V4h4v.7A1.8 1.8 0 0 0 15.7 6a1.8 1.8 0 0 0 1.97-1.08l.06-.07 2.1 2.1-.07.07A1.8 1.8 0 0 0 19.4 9a1.8 1.8 0 0 0 1.3 1.7h.3v2.6h-.3A1.8 1.8 0 0 0 19.4 15Z"/></svg><span>설정</span></button>
           <button id="bulkButton" class="btn btn-primary" type="button"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>월 돌봄표 만들기</span></button>
         </div>
       </section>
 
-      <section class="sitter-selector" id="sitterSelectorWrap" hidden><label for="activeSitter">관리할 시터</label><select id="activeSitter" aria-label="관리할 시터 선택"></select></section>
+      <section class="sitter-selector" id="sitterSelectorWrap" hidden>
+        <label for="activeSitter">관리할 시터 선택</label>
+        <select id="activeSitter" aria-label="관리할 시터 선택"></select>
+        <button type="button" id="sitterSettingsShortcut" class="btn btn-quiet btn-small">시터 관리</button>
+      </section>
+      <p id="sitterSetupHint" class="sitter-setup-hint" hidden>이 계정은 아직 시급과 담당 아이가 설정되지 않았습니다. <strong>설정 → 시터 관리</strong>에서 등록해주세요.</p>
       <section class="pay-dashboard" aria-label="급여 요약">
         <div class="summary-card summary-main pay-card">
           <div class="card-top"><span>이번 정산기간 예상 급여</span><span class="summary-emoji">↗</span></div>
@@ -149,7 +158,7 @@
         <div class="shift-table-head"><span>돌봄 날짜</span><span>돌봄 유형</span><span>돌봄 시간</span><span>급여</span><span>상태</span><span></span></div>
         <div id="shiftList" class="shift-list"></div>
       </section>
-      <footer class="site-footer">돌봄노트 <span>✳</span> 아이들의 하루를 함께 기록해요.</footer>
+      <footer class="site-footer">지호-수호 돌봄노트 <span>✳</span> 아이들의 하루를 함께 기록해요.</footer>
     </main>
     <button id="mobileAdd" class="mobile-add" hidden title="일정 추가" aria-label="일정 추가">+</button>
   </div>
@@ -173,32 +182,47 @@
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="bulkModalTitle"><div class="modal-header"><div><span class="section-kicker">MONTHLY SETUP</span><h2 id="bulkModalTitle">월 돌봄표 만들기</h2></div><button class="close-button" type="button" data-close="bulkModal" aria-label="닫기">×</button></div><p class="modal-intro" id="bulkDescription">선택한 요일의 빈 날짜에 기본 하원 일정을 생성합니다.</p><label class="field-label" for="bulkScope">돌봄표 생성 범위</label><select id="bulkScope"><option value="period">선택 정산기간 전체 (권장)</option><option value="calendar">달력에 표시된 월 전체</option></select><span class="field-label">돌봄 요일 선택</span><div class="weekday-selector" id="weekdaySelector"><button type="button" data-weekday="1" class="selected">월</button><button type="button" data-weekday="2" class="selected">화</button><button type="button" data-weekday="3" class="selected">수</button><button type="button" data-weekday="4" class="selected">목</button><button type="button" data-weekday="5" class="selected">금</button><button type="button" data-weekday="6">토</button><button type="button" data-weekday="0">일</button></div><div class="bulk-summary" id="bulkSummary">새로 생성할 날짜 0일</div><p class="caution">이미 등록된 일정은 덮어쓰지 않습니다. 공휴일은 자동 제외되지 않으며, 생성 후 날짜별로 삭제할 수 있습니다.</p><div class="modal-footer"><div></div><div class="modal-footer-right"><button class="btn btn-quiet" data-close="bulkModal" type="button">취소</button><button class="btn btn-primary" id="confirmBulk" type="button">돌봄표 생성</button></div></div></div>
   </div>
 
-  <div class="modal-overlay" id="settingsModal" hidden><div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle"><div class="modal-header"><div><span class="section-kicker">PREFERENCES</span><h2 id="settingsModalTitle">기본 정보 설정</h2></div><button class="close-button" type="button" data-close="settingsModal" aria-label="닫기">×</button></div><p class="modal-intro">아이 호칭과 월 급여 정산기간을 설정합니다. 시터별 이름과 시급은 「시터·아이 관리」에서 설정합니다.</p><label class="field-label" for="child1">첫째 이름 / 호칭</label><input id="child1" maxlength="30" placeholder="첫째" /><label class="field-label" for="child2">둘째 이름 / 호칭</label><input id="child2" maxlength="30" placeholder="둘째" />
-  <div class="settings-divider"></div><div class="section-kicker">PAYROLL PERIOD</div><h3 class="setting-subtitle">월 급여 정산기간</h3>
-  <p class="modal-intro">매월 돌봄 시작일을 선택하세요. 종료일은 다음 시작일 전날로 자동 지정되어 기간이 겹치거나 빠지지 않습니다.</p>
-  <label class="field-label" for="payrollStartDay">매월 정산 시작일</label><select id="payrollStartDay"></select>
-  <div class="setting-preview" id="payrollPreview" aria-live="polite">매월 26일 ~ 다음 달 25일</div>
-  <p class="field-help">29~31일을 선택했는데 해당 월에 그 날짜가 없으면 말일을 시작일로 적용합니다. 변경하면 과거 정산내역의 기간 구분도 변경됩니다.</p>
-  <div class="modal-footer"><div></div><div class="modal-footer-right"><button class="btn btn-quiet" data-close="settingsModal" type="button">취소</button><button class="btn btn-primary" id="saveSettings" type="button">설정 저장</button></div></div></div></div>
-
-
-  <div class="modal-overlay" id="mappingModal" hidden>
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="mappingModalTitle">
-      <div class="modal-header"><div><span class="section-kicker">CHILD × SITTER</span><h2 id="mappingModalTitle">시터별 시급·아이 연결</h2></div><button class="close-button" type="button" data-close="mappingModal" aria-label="닫기">×</button></div>
-      <p class="modal-intro">시터 로그인 UID별로 이름·시급·담당 아이를 설정합니다. 기존 시터를 고르거나 새로운 UID를 등록하세요.</p><label class="field-label" for="editSitterUid">관리할 시터 선택</label><select id="editSitterUid"><option value="">새 시터 등록</option></select>
-      <label class="field-label" for="sitterUid">시터님 Firebase 계정 UID</label>
-      <input id="sitterUid" maxlength="128" autocomplete="off" spellcheck="false" placeholder="Firebase Authentication → 사용자 → UID" />
-      <p class="field-help" id="uidHelp">Firebase Authentication에서 발급한 로그인 UID입니다. 이메일 주소가 아닙니다.</p>
-      <label class="field-label" for="mappingName">시터님 이름 / 호칭</label><input id="mappingName" maxlength="50" placeholder="시터님" />
-      <label class="field-label" for="mappingRate">시급 (원)</label><input id="mappingRate" type="number" min="1000" max="1000000" step="500" />
-      <label class="field-label" for="rateEffectiveDate">변경 시급 적용일</label><input id="rateEffectiveDate" type="date" />
-      <p class="field-help">새 시터는 등록일 이전에도 같은 시급을 적용합니다. 기존 시터의 시급을 바꾸면 지정일 이후 돌봄분부터 반영됩니다.</p>
-      <div class="settings-divider"></div><span class="field-label">시터님에게 배정할 아이</span>
-      <label class="child-assignment"><input id="assignChild1" type="checkbox" /><span class="child-avatar">1</span><span><strong id="assignChild1Label">첫째</strong><small>선택 시 해당 시터에게 연결</small></span></label>
-      <label class="child-assignment"><input id="assignChild2" type="checkbox" /><span class="child-avatar alt">2</span><span><strong id="assignChild2Label">둘째</strong><small>선택 시 해당 시터에게 연결</small></span></label>
-      <div class="mapping-summary" id="mappingPreview">연결된 아이 0명</div>
-      <p class="field-help">시터 ID별로 각자의 돌봄표와 급여가 분리됩니다. 아이 2명을 동시에 돌보더라도 돌봄시간에 아이 수를 곱하지 않습니다.</p>
-      <div class="modal-footer"><div></div><div class="modal-footer-right"><button class="btn btn-quiet" type="button" data-close="mappingModal">취소</button><button class="btn btn-primary" type="button" id="saveMapping">연결 저장</button></div></div>
+  <div class="modal-overlay" id="settingsModal" hidden>
+    <div class="modal-card settings-card" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+      <div class="modal-header">
+        <div><span class="section-kicker">FAMILY SETTINGS</span><h2 id="settingsModalTitle">설정</h2></div>
+        <button class="close-button" type="button" data-close="settingsModal" aria-label="닫기">×</button>
+      </div>
+      <div class="settings-tabs" role="tablist" aria-label="설정 메뉴">
+        <button id="settingsBasicTab" type="button" class="active" role="tab" aria-selected="true" aria-controls="settingsBasicPanel">기본 설정</button>
+        <button id="settingsSitterTab" type="button" role="tab" aria-selected="false" aria-controls="settingsSitterPanel">시터 관리</button>
+      </div>
+      <section id="settingsBasicPanel" role="tabpanel" aria-labelledby="settingsBasicTab">
+        <p class="modal-intro">아이 이름과 월 급여 정산기간을 관리합니다.</p>
+        <label class="field-label" for="child1">첫째 이름 / 호칭</label><input id="child1" maxlength="30" placeholder="지호" />
+        <label class="field-label" for="child2">둘째 이름 / 호칭</label><input id="child2" maxlength="30" placeholder="수호" />
+        <div class="settings-divider"></div>
+        <div class="section-kicker">PAYROLL PERIOD</div><h3 class="setting-subtitle">월 급여 정산기간</h3>
+        <p class="modal-intro">매월 정산 시작일을 선택하세요. 다음 정산 시작일 전날까지 자동 계산됩니다.</p>
+        <label class="field-label" for="payrollStartDay">매월 정산 시작일</label><select id="payrollStartDay"></select>
+        <div class="setting-preview" id="payrollPreview" aria-live="polite">매월 26일 ~ 다음 달 25일</div>
+        <p class="field-help">해당 날짜가 없는 달은 말일로 처리합니다. 정산 시작일을 변경하면 과거 정산기간 구분도 달라집니다.</p>
+        <div class="modal-footer"><div></div><div class="modal-footer-right"><button class="btn btn-quiet" data-close="settingsModal" type="button">취소</button><button class="btn btn-primary" id="saveSettings" type="button">설정 저장</button></div></div>
+      </section>
+      <section id="settingsSitterPanel" role="tabpanel" aria-labelledby="settingsSitterTab" hidden>
+        <p class="modal-intro">Firebase에서 <strong>sitter</strong> 역할을 등록한 계정이 아래 목록에 자동으로 표시됩니다. UID를 선택하고 이름·시급·담당 아이를 지정해 저장하세요.</p>
+        <label class="field-label" for="editSitterUid">시터 계정 선택</label>
+        <select id="editSitterUid"><option value="">+ UID 직접 입력</option></select>
+        <p class="field-help" id="sitterRoleHint">계정이 보이지 않으면 Firebase의 roles 문서와 Firestore 보안 규칙을 확인해주세요.</p>
+        <label class="field-label" for="sitterUid">시터 로그인 UID</label>
+        <input id="sitterUid" maxlength="128" autocomplete="off" spellcheck="false" placeholder="Firebase Authentication → Users → UID" />
+        <p class="field-help" id="uidHelp">Firebase의 로그인 사용자 UID입니다. 이메일 주소가 아닙니다.</p>
+        <label class="field-label" for="mappingName">시터님 이름 / 호칭</label><input id="mappingName" maxlength="50" placeholder="시터님" />
+        <label class="field-label" for="mappingRate">시급 (원)</label><input id="mappingRate" type="number" min="1000" max="1000000" step="500" inputmode="numeric" />
+        <label class="field-label" for="rateEffectiveDate">시급 변경 적용일</label><input id="rateEffectiveDate" type="date" />
+        <p class="field-help">기존 시터의 시급을 변경하면 지정한 적용일 이후 돌봄 급여에 반영됩니다.</p>
+        <div class="settings-divider"></div><span class="field-label">담당 아이 연결</span>
+        <label class="child-assignment"><input id="assignChild1" type="checkbox" /><span class="child-avatar">1</span><span><strong id="assignChild1Label">지호</strong><small>연결할 경우 선택</small></span></label>
+        <label class="child-assignment"><input id="assignChild2" type="checkbox" /><span class="child-avatar alt">2</span><span><strong id="assignChild2Label">수호</strong><small>연결할 경우 선택</small></span></label>
+        <div class="mapping-summary" id="mappingPreview">연결된 아이 0명</div>
+        <p class="field-help">역할 등록만으로 시터 프로필이 자동 생성되지는 않습니다. 여기서 저장하면 상단의 ‘관리할 시터 선택’과 급여 계산에 반영됩니다.</p>
+        <div class="modal-footer"><div></div><div class="modal-footer-right"><button class="btn btn-quiet" data-close="settingsModal" type="button">취소</button><button class="btn btn-primary" type="button" id="saveMapping">시터 정보 저장</button></div></div>
+      </section>
     </div>
   </div>
 
@@ -232,6 +256,6 @@
     </div>
   </div>
   <script src="./config.js"></script>
-  <script src="./app.js" defer></script>
+  <script src="./app.js?rev=4" defer></script>
 </body>
 </html>
