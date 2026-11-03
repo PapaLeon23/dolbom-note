@@ -163,3 +163,52 @@ input,select,textarea{max-width:100%;min-width:0}
 .day-tag.off,.status-chip.off{background:#edf0f3;color:#718091}
 .shift-type.off{color:#7c8999}
 @media(max-width:390px){.type-options{gap:5px}.type-option{padding:10px 6px;min-height:78px}.type-option strong{font-size:11px}.type-option small{font-size:9px}}
+
+/* 돌봄노트 레이아웃 정돈: 오른쪽 이력 길이에 따라 돌봄 상세가 밀리지 않도록 분리 */
+.content-layout>.main-col{display:flex;flex-direction:column;gap:20px;min-width:0}
+.main-col>.calendar-panel,.main-col>.list-panel{min-width:0;width:100%}
+.info-panel,.settlement-panel{padding:21px 21px 19px}
+.info-panel h2{margin-bottom:17px}
+.care-recipient{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:12px;background:#f3faf8;margin-bottom:13px}
+.care-recipient-label{font-size:11px;font-weight:700;color:#70958e;white-space:nowrap}
+.care-child-tags{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap;min-width:0}
+.care-child-pill{background:#fff;border:1px solid #d8ebe6;color:#317e75;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:800}
+.care-child-empty{font-size:11px;font-weight:700;color:#899da7}
+.care-rule-list .info-row{padding:10px 0;margin:0;border-bottom:1px solid #edf1f2;align-items:flex-start}
+.care-rule-list .info-row:last-child{border-bottom:0}
+.care-rule-list .info-row span{font-size:11px;color:#8696a1}
+.care-rule-list .info-row strong{font-size:11px;line-height:1.5;text-align:right;color:#3c5960}
+.payment-history-head{margin:8px 0 7px}
+.payment-history-head h2{font-size:18px;margin:0;line-height:1.4}
+.payment-history-caption{margin-bottom:10px}
+.payment-history-list,.payment-history-list.history-long{max-height:263px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#b8d3cd transparent}
+.payment-history-row{padding:7px 2px;gap:8px}
+.payment-history-period,.payment-history-value{gap:2px}
+.payment-history-period strong{font-size:11px}
+.payment-history-period small{font-size:9px}
+.payment-history-value strong{font-size:12px}
+.payment-history-value small{font-size:9px}
+.payment-history-total{margin-top:12px;padding:11px 12px}
+.settlement-panel .section-kicker{margin-bottom:7px}
+@media(min-width:1001px) and (max-width:1350px){
+ .main-col .shift-table-head{display:none}
+ .main-col .shift-list{padding:0 13px 12px}
+ .main-col .shift-row{padding:13px 5px;grid-template-columns:minmax(0,1fr) auto 17px;gap:5px 9px}
+ .main-col .shift-row .date-label{grid-column:1;grid-row:1}
+ .main-col .shift-row .shift-type{grid-column:1;grid-row:2}
+ .main-col .shift-row .shift-time{grid-column:1;grid-row:3}
+ .main-col .shift-row .shift-amount{grid-column:2;grid-row:1;text-align:right}
+ .main-col .shift-row .status-chip{grid-column:2;grid-row:2/4;justify-self:end}
+ .main-col .shift-row .row-chevron{grid-column:3;grid-row:1/4}
+}
+@media(max-width:1000px){
+ .content-layout>.main-col{display:contents}
+ .main-col>.calendar-panel{order:1}
+ .content-layout>.side-col{order:2}
+ .main-col>.list-panel{order:3}
+}
+@media(max-width:650px){
+ .care-recipient{padding:11px 12px}
+ .info-panel,.settlement-panel{padding:20px 17px}
+ .payment-history-list,.payment-history-list.history-long{max-height:288px}
+}
