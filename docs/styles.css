@@ -212,3 +212,26 @@ input,select,textarea{max-width:100%;min-width:0}
  .info-panel,.settlement-panel{padding:20px 17px}
  .payment-history-list,.payment-history-list.history-long{max-height:288px}
 }
+
+/* 데스크톱: 달력과 우측 카드 높이 정렬, 돌봄 상세는 가로 전체 너비 */
+@media(min-width:1001px){
+  .content-layout{align-items:stretch}
+  .content-layout>.main-col{display:block;min-width:0}
+  .content-layout>.main-col>.calendar-panel{width:100%;height:100%;min-width:0}
+  .content-layout>.side-col{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:max-content minmax(0,1fr);gap:18px;align-self:stretch;min-height:0;height:100%;overflow:hidden}
+  .content-layout>.side-col>.info-panel{min-width:0}
+  .content-layout>.side-col>.settlement-panel{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  .settlement-panel .payment-history-list,.settlement-panel .payment-history-list.history-long{max-height:none;min-height:0;flex:1 1 auto;overflow-y:auto}
+}
+/* 상세 표는 달력 아래 전체 가로폭을 사용합니다. */
+.content-layout + .list-panel{width:100%;min-width:0;margin-bottom:21px}
+@media(max-width:1000px){
+  .content-layout>.main-col{display:block}
+  .content-layout>.side-col{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto;gap:16px;min-height:auto;height:auto;overflow:visible}
+  .content-layout>.side-col>.settlement-panel{min-height:auto;overflow:visible}
+  .settlement-panel .payment-history-list,.settlement-panel .payment-history-list.history-long{max-height:288px;overflow-y:auto;flex:none}
+}
+@media(max-width:650px){
+  .content-layout>.side-col{grid-template-columns:minmax(0,1fr)}
+  .content-layout + .list-panel{margin-bottom:18px}
+}
