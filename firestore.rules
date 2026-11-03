@@ -23,8 +23,10 @@ service cloud.firestore {
 
     // Firebase 콘솔에서만 계정 역할 생성/수정. 웹페이지에서는 절대 못 바꿉니다.
     match /roles/{uid} {
-      allow get: if signedIn() && request.auth.uid == uid;
-      allow list, create, update, delete: if false;
+      allow get: if signedIn() && (request.auth.uid == uid || admin());
+      // 관리자만 'sitter' 역할 계정 목록을 조회할 수 있습니다.
+      allow list: if admin();
+      allow create, update, delete: if false;
     }
 
     match /settings/{key} {
