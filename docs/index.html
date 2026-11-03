@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?rev=5" />
+  <link rel="stylesheet" href="./styles.css?rev=6" />
   <title>지호-수호 돌봄노트 | 일정·급여·전달사항 관리</title>
 </head>
 <body>
@@ -133,11 +133,6 @@
           <section class="panel info-panel"><div class="section-kicker">WORK DETAILS</div><h2>우리집 돌봄 기준</h2><div class="person-row"><div class="avatar-stack"><span>1</span><span>2</span></div><div><strong id="childrenLabel">첫째 · 둘째</strong><small id="childrenCount">연결된 돌봄 아이</small></div></div><div class="mapping-preview" id="mappingInfo">돌봄 대상 연결 정보를 확인하고 있어요.</div><div class="info-divider"></div><div class="info-row"><span>기본 하원 시간</span><strong>16:30 – 18:30</strong></div><div class="info-row"><span>기본 돌봄 급여</span><strong id="basePay">30,000원</strong></div><div class="info-row"><span>추가 돌봄</span><strong>30분 단위</strong></div><div class="info-row"><span>30분 추가 급여</span><strong id="extraPay">7,500원</strong></div><div class="info-row"><span>급여 정산 기준</span><strong id="cutoffInfo">26일 ~ 다음 달 25일</strong></div></section>
           <section class="panel settlement-panel" aria-label="급여 지급 현황">
             <div class="section-kicker">PAYMENT HISTORY</div><h2>급여 지급 현황</h2>
-            <div class="upcoming-care">
-              <div class="upcoming-care-top"><span id="upcomingCareLabel">이번 달 예정 돌봄</span><span id="upcomingCareCount">0일 · 0시간</span></div>
-              <strong id="upcomingCarePay">0원</strong>
-              <small>아직 완료되지 않은 돌봄 일정의 예상 급여</small>
-            </div>
             <div class="payment-history-head">
               <h3>월별 지급 급여</h3>
               <div class="history-switch" role="group" aria-label="급여 지급 내역 조회 기간">
@@ -256,6 +251,6 @@
     </div>
   </div>
   <script src="./config.js"></script>
-  <script src="./app.js?rev=5" defer></script>
+  <script src="./app.js?rev=6" defer></script>
 </body>
 </html>
