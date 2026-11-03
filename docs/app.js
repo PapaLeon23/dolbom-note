@@ -160,11 +160,6 @@
     $('childrenCount').textContent=`배정된 돌봄 대상 · ${assignedIds().length}명`;
     $('mappingInfo').textContent=person?`${person.name} · 연결된 아이 ${assignedIds().length}명 · 시급 ${money(rate)}`:'「설정 → 시터 관리」에서 로그인 UID를 연결해주세요.';
     $('basePay').textContent=money(rate*2);$('extraPay').textContent=money(rate/2);
-    // 이번 정산기간의 앞으로 남은 돌봄만 별도로 표시합니다.
-    $('upcomingCareLabel').textContent=state.month.getTime()===settlementMonthForToday().getTime()
-      ? '이번 달 예정 돌봄' : `${state.month.getMonth()+1}월 예정 돌봄`;
-    $('upcomingCareCount').textContent=`${futureShifts.length}일 · ${hours(futureShifts)}시간`;
-    $('upcomingCarePay').textContent=money(planned);
     renderPaymentHistory();
     $('calendarTip').textContent='달력은 표시 월 전체, 정산은 상단의 기간 기준입니다.';
     $('listCount').textContent=String(shifts.length);
