@@ -235,3 +235,43 @@ input,select,textarea{max-width:100%;min-width:0}
   .content-layout>.side-col{grid-template-columns:minmax(0,1fr)}
   .content-layout + .list-panel{margin-bottom:18px}
 }
+
+/* 선택 월을 화살표 사이에 고정 표시 — '이번 달'과 이동 월 혼동 방지 */
+.calendar-header{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;
+  gap:8px;
+  margin-bottom:23px
+}
+.calendar-header>.section-kicker{margin:0;min-width:0}
+.calendar-header>.calendar-controls{
+  grid-column:2;
+  display:flex;align-items:center;justify-content:center;gap:12px
+}
+.calendar-header .calendar-controls h2{
+  margin:0;
+  min-width:137px;
+  font-size:21px;
+  font-weight:850;
+  letter-spacing:-.6px;
+  text-align:center;
+  line-height:1.4;
+  font-variant-numeric:tabular-nums
+}
+.calendar-header .calendar-controls .icon-button{
+  width:38px;height:38px;min-width:38px;
+  border:1px solid #e0eae8;border-radius:12px;
+  background:#f7faf9;
+  display:grid;place-items:center
+}
+.calendar-header .calendar-controls .icon-button:hover{background:#eaf6f3;border-color:#b9ddd4}
+.calendar-header .calendar-controls .icon-button:focus-visible{outline:2px solid #369b90;outline-offset:2px}
+.calendar-header>.calendar-side-spacer{grid-column:3}
+@media(max-width:650px){
+  .calendar-header{grid-template-columns:minmax(0,1fr);justify-items:center;row-gap:8px}
+  .calendar-header>.section-kicker{grid-column:1;justify-self:start}
+  .calendar-header>.calendar-controls{grid-column:1;gap:9px;width:100%}
+  .calendar-header .calendar-controls h2{font-size:19px;min-width:125px}
+  .calendar-header>.calendar-side-spacer{display:none}
+}
