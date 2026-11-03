@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?rev=4" />
+  <link rel="stylesheet" href="./styles.css?rev=5" />
   <title>지호-수호 돌봄노트 | 일정·급여·전달사항 관리</title>
 </head>
 <body>
@@ -168,10 +168,10 @@
       <div class="modal-header"><div><span class="section-kicker">DAILY SHIFT</span><h2 id="dayModalTitle">돌봄 일정</h2></div><button class="close-button" type="button" data-close="dayModal" aria-label="닫기">×</button></div>
       <div id="dayModalBody">
         <label class="field-label" for="shiftDate">돌봄 날짜</label><input id="shiftDate" type="date" />
-        <div class="field-group"><span class="field-label">돌봄 유형</span><div class="type-options"><button id="baseType" class="type-option active" type="button"><strong>하원</strong><small>16:30 – 18:30</small></button><button id="extraType" class="type-option" type="button"><strong>하원 + 추가 돌봄</strong><small>18:30 이후 연장</small></button></div></div>
+        <div class="field-group"><span class="field-label">돌봄 유형</span><div class="type-options"><button id="baseType" class="type-option active" type="button"><strong>하원</strong><small>16:30 – 18:30</small></button><button id="extraType" class="type-option" type="button"><strong>하원 + 추가 돌봄</strong><small>30분 추가</small></button><button id="offType" class="type-option" type="button"><strong>휴무</strong><small>돌봄 없음 · 급여 0원</small></button></div></div>
         <div id="extraField" class="extra-field" hidden><div><div class="field-label">추가 돌봄 시간</div><p>30분씩 늘리거나 줄일 수 있어요.</p></div><div class="stepper"><button id="decreaseExtra" type="button" aria-label="30분 줄이기">−</button><strong id="extraMinutesText">30분</strong><button id="increaseExtra" type="button" aria-label="30분 늘리기">+</button></div></div>
         <div class="time-preview"><div><small>돌봄 시간</small><strong id="previewTime">16:30 – 18:30</strong></div><div><small>예상 급여</small><strong id="previewPay">30,000원</strong></div></div>
-        <label class="field-label" for="shiftStatus">진행 상태</label><select id="shiftStatus"><option value="scheduled">돌봄 예정</option><option value="completed">돌봄 완료 · 미지급</option><option value="paid">급여 지급 완료</option></select>
+        <div id="shiftStatusField"><label class="field-label" for="shiftStatus">진행 상태</label><select id="shiftStatus"><option value="scheduled">돌봄 예정</option><option value="completed">돌봄 완료 · 미지급</option><option value="paid">급여 지급 완료</option></select></div>
         <label class="field-label" for="shiftMemo">메모 (선택)</label><textarea id="shiftMemo" maxlength="500" rows="2" placeholder="예: 이날은 30분 연장 돌봄 예정"></textarea>
       </div>
       <div class="modal-footer" id="dayModalActions"><button id="deleteShift" class="btn btn-danger" type="button" hidden>일정 삭제</button><div class="modal-footer-right"><button class="btn btn-quiet" type="button" data-close="dayModal">취소</button><button id="saveShift" class="btn btn-primary" type="button">일정 저장</button></div></div>
@@ -256,6 +256,6 @@
     </div>
   </div>
   <script src="./config.js"></script>
-  <script src="./app.js?rev=4" defer></script>
+  <script src="./app.js?rev=5" defer></script>
 </body>
 </html>
