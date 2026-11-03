@@ -1,8 +1,8 @@
-/* 돌봄노트 v3.3 — GitHub Pages + Firebase / 관리자·시터 권한 / 아이별 전달사항 */
+/* 지호-수호 돌봄노트 — GitHub Pages + Firebase / 관리자·시터 권한 / 아이별 전달사항 */
 (() => {
   'use strict';
   const DEMO_UID = 'demo-sitter';
-  const DEFAULT_SETTINGS = { child1:'첫째', child2:'둘째', payrollStartDay:26 };
+  const DEFAULT_SETTINGS = { child1:'지호', child2:'수호', payrollStartDay:26 };
   const DEFAULT_SITTER = { uid:DEMO_UID, name:'시터님', hourlyRate:15000,
     rateHistory:[{from:'2000-01-01',rate:15000}], assignedChildren:['child1','child2'], active:true };
   const FIREBASE_CONFIG = window.SITTER_FIREBASE_CONFIG || {};
@@ -13,9 +13,9 @@
   const els = Object.fromEntries([...document.querySelectorAll('[id]')].map(el => [el.id,el]));
   const state = {
     role:'admin',user:null,month:new Date(new Date().getFullYear(),new Date().getMonth(),1),
-    settings:{...DEFAULT_SETTINGS}, sitters:new Map(), activeSitterUid:DEMO_UID,
+    settings:{...DEFAULT_SETTINGS}, sitters:new Map(), roleSitterUids:new Set(), activeSitterUid:DEMO_UID,
     shifts:new Map(), localAllShifts:new Map(), notices:{}, medicationRecords:new Map(), medications:{}, medicationDate:"", medDraft:[], medLoadToken:0, unsubMedications:[], modal:{date:'',extraMinutes:0,original:null},
-    firebase:null,auth:null,db:null,unsubSettings:null,unsubSitters:null,unsubShifts:null,
+    firebase:null,auth:null,db:null,unsubSettings:null,unsubSitters:null,unsubRoles:null,unsubShifts:null,
     unsubNotices:[],historyMonths:6,pending:false,bulkScope:'period',bulkWeekdays:new Set([1,2,3,4,5]),periodInitialized:false
   };
   let toastTimer;
@@ -83,7 +83,7 @@
   }
   function setPending(p){state.pending=p;['saveShift','deleteShift','confirmBulk','saveSettings','saveMapping','saveNotice','deleteNotice','saveMedication','addMedication','loginButton'].forEach(id=>{if($(id))$(id).disabled=p;});}
   function showScreen(screen){$('authScreen').hidden=screen!=='auth';$('unassignedScreen').hidden=screen!=='unassigned';$('app').hidden=screen!=='app';}
-  function openModal(id){$(id).hidden=false;document.body.style.overflow='hidden';}
+  function openModal(id){$(id).hidden=false;const panel=$(id).querySelector('.modal-card');if(panel)panel.scrollTop=0;document.body.style.overflow='hidden';}
   function closeModal(id){$(id).hidden=true;if([...document.querySelectorAll('.modal-overlay')].every(el=>el.hidden))document.body.style.overflow='';}
   function closeAllModals(){document.querySelectorAll('.modal-overlay').forEach(el=>el.hidden=true);document.body.style.overflow='';}
   function saveLocal(){if(cloudMode)return;localStorage.setItem(STORAGE_KEY,JSON.stringify({settings:state.settings,sitters:[...state.sitters.values()],shifts:[...state.localAllShifts.values()],notices:state.notices,medicationRecords:[...state.medicationRecords.entries()],activeSitterUid:state.activeSitterUid}));}
@@ -103,7 +103,7 @@
       // v2 체험판을 사용했다면 데이터·이름·정산기간을 가져옵니다.
       const old=JSON.parse(localStorage.getItem('care-note-settings-v1')||'{}');
       const oldShifts=JSON.parse(localStorage.getItem('care-note-shifts-v1')||'[]');
-      state.settings={child1:old.child1||'첫째',child2:old.child2||'둘째',payrollStartDay:old.payrollStartDay||26};
+      state.settings={child1:old.child1||DEFAULT_SETTINGS.child1,child2:old.child2||DEFAULT_SETTINGS.child2,payrollStartDay:old.payrollStartDay||26};
       const person={...DEFAULT_SITTER,name:old.sitterName||'시터님',hourlyRate:old.hourlyRate||15000,
         rateHistory:[{from:'2000-01-01',rate:old.hourlyRate||15000}],
         assignedChildren:[old.child1Assigned===false?null:'child1',old.child2Assigned===false?null:'child2'].filter(Boolean)};
@@ -129,8 +129,14 @@
     $('sitterSelectorWrap').hidden=!isAdmin();
     if(isAdmin()){
       const options=[...state.sitters.values()].sort((a,b)=>(a.name||'').localeCompare(b.name||''));
-      $('activeSitter').innerHTML=options.length?options.map(s=>`<option value="${escapeHtml(s.uid)}">${escapeHtml(s.name)} (${escapeHtml(s.uid.slice(0,8))}…)</option>`).join(''):'<option value="">먼저 시터를 등록해주세요</option>';
-      $('activeSitter').value=state.activeSitterUid;
+      const uids=[...new Set([...state.roleSitterUids,...options.map(s=>s.uid)])];
+      $('activeSitter').innerHTML=uids.length?uids.map(uid=>{
+        const p=state.sitters.get(uid);
+        const label=p?`${p.name} (${uid.slice(0,8)}…)`:`미설정 시터 (${uid.slice(0,8)}…)`;
+        return `<option value="${escapeHtml(uid)}">${escapeHtml(label)}</option>`;
+      }).join(''):'<option value="">등록된 시터 계정 없음</option>';
+      $('activeSitter').value=uids.includes(state.activeSitterUid)?state.activeSitterUid:'';
+      $('sitterSetupHint').hidden=!state.activeSitterUid||Boolean(person);
     }
     // 왼쪽: 정산기간에 등록된 일정 전체. 오른쪽: 완료(자동·수동) 및 지급 완료된 일정.
     $('totalPay').textContent=won(possible);
@@ -148,7 +154,7 @@
     $('cutoffInfo').textContent=periodLabel();
     $('childrenLabel').textContent=person?(assignedNames().join(' · ')||'연결된 아이 없음'):'연결된 시터 없음';
     $('childrenCount').textContent=`배정된 돌봄 대상 · ${assignedIds().length}명`;
-    $('mappingInfo').textContent=person?`${person.name} · 연결된 아이 ${assignedIds().length}명 · 시급 ${money(rate)}`:'「시터·아이 관리」에서 로그인 UID를 연결해주세요.';
+    $('mappingInfo').textContent=person?`${person.name} · 연결된 아이 ${assignedIds().length}명 · 시급 ${money(rate)}`:'「설정 → 시터 관리」에서 로그인 UID를 연결해주세요.';
     $('basePay').textContent=money(rate*2);$('extraPay').textContent=money(rate/2);
     // 이번 정산기간의 앞으로 남은 돌봄만 별도로 표시합니다.
     $('upcomingCareLabel').textContent=state.month.getTime()===settlementMonthForToday().getTime()
@@ -218,7 +224,7 @@
     $('calendar').innerHTML=html;
   }
   function renderShiftList(shifts){
-    if(!shifts.length){$('shiftList').innerHTML=`<div class="empty-list"><div class="empty-illustration">☼</div><strong>등록된 돌봄 일정이 없어요</strong><p>${isAdmin()?'시터를 선택하고 ‘월 돌봄표 만들기’로 등록하세요.':'이 정산기간에 연결된 돌봄가 없습니다.'}</p></div>`;return;}
+    if(!shifts.length){$('shiftList').innerHTML=`<div class="empty-list"><div class="empty-illustration">☼</div><strong>등록된 돌봄 일정이 없어요</strong><p>${isAdmin()?'시터를 선택하고 ‘월 돌봄표 만들기’로 등록하세요.':'이 정산기간에 연결된 돌봄 일정이 없습니다.'}</p></div>`;return;}
     $('shiftList').innerHTML=shifts.map(s=>{
       const d=parseDate(s.date),status=effectiveStatus(s);
       return `<div class="shift-row" role="button" tabindex="0" data-date="${s.date}" aria-label="${s.date} 돌봄 상세보기"><div class="date-label">${d.getMonth()+1}월 ${d.getDate()}일 <span>(${weekdays[d.getDay()]})</span></div><div class="shift-type ${s.extraMinutes?'extra':''}">${s.extraMinutes?'하원 + 추가 돌봄':'하원'}</div><div class="shift-time">16:30 – ${endTime(s.extraMinutes)}</div><div class="shift-amount">${money(amount(s))}</div><div><span class="status-chip ${status}">${statusNames[status]}</span></div><div class="row-chevron">›</div></div>`;
@@ -228,7 +234,7 @@
   function openDay(date,allowChange=false){
     if(!validDate(date))return;
     const s=state.shifts.get(date);
-    if(!isAdmin()&&(!canViewWork()||!s)){toast('해당 날짜에 등록된 돌봄가 없습니다.');return;}
+    if(!isAdmin()&&(!canViewWork()||!s)){toast('해당 날짜에 등록된 돌봄 일정이 없습니다.');return;}
     state.modal={date,extraMinutes:s?.extraMinutes||0,original:s?{...s}:null};
     $('shiftDate').value=date;
     $('shiftDate').min=s&&!date.startsWith(monthKey())?date:`${monthKey()}-01`;
@@ -303,10 +309,20 @@
       closeModal('bulkModal');render();toast(`${dates.length}일 돌봄표를 생성했습니다.`);
     }catch(e){handleError(e,'돌봄표 생성 실패');}finally{setPending(false);}
   }
-  function openSettings(){
+  function showSettingsTab(tab){
+    const isSitter=tab==='sitters';
+    $('settingsBasicTab').classList.toggle('active',!isSitter);
+    $('settingsSitterTab').classList.toggle('active',isSitter);
+    $('settingsBasicTab').setAttribute('aria-selected',String(!isSitter));
+    $('settingsSitterTab').setAttribute('aria-selected',String(isSitter));
+    $('settingsBasicPanel').hidden=isSitter;
+    $('settingsSitterPanel').hidden=!isSitter;
+    if(isSitter)refreshMappingList();
+  }
+  function openSettings(tab='basic'){
     if(!isAdmin())return;
     $('child1').value=state.settings.child1;$('child2').value=state.settings.child2;$('payrollStartDay').value=String(state.settings.payrollStartDay);
-    refreshPayrollPreview();openModal('settingsModal');
+    refreshPayrollPreview();showSettingsTab(tab);openModal('settingsModal');
   }
   function refreshPayrollPreview(){
     const day=Number($('payrollStartDay').value)||26,p=settlementPeriod(state.month,day);
@@ -326,14 +342,21 @@
   }
   function refreshMappingList(){
     const old=$('editSitterUid').value;
-    $('editSitterUid').innerHTML='<option value="">+ 새 시터 등록</option>'+[...state.sitters.values()].map(s=>`<option value="${escapeHtml(s.uid)}">${escapeHtml(s.name)} (${escapeHtml(s.uid.slice(0,8))}…)</option>`).join('');
-    $('editSitterUid').value=old&&state.sitters.has(old)?old:(state.sitters.has(state.activeSitterUid)?state.activeSitterUid:'');
+    const uids=[...new Set([...state.roleSitterUids,...state.sitters.keys()])];
+    $('editSitterUid').innerHTML='<option value="">+ UID 직접 입력</option>'+uids.map(uid=>{
+      const p=state.sitters.get(uid);
+      return `<option value="${escapeHtml(uid)}">${p?escapeHtml(p.name):'미설정 시터'} (${escapeHtml(uid.slice(0,8))}…)</option>`;
+    }).join('');
+    $('editSitterUid').value=uids.includes(old)?old:(uids.includes(state.activeSitterUid)?state.activeSitterUid:'');
+    $('sitterRoleHint').textContent=cloudMode
+      ? (state.roleSitterUids.size?`sitter 권한 계정 ${state.roleSitterUids.size}개 확인 · 미설정 계정은 프로필 저장이 필요합니다.`:'sitter 권한 계정이 없다면 Firestore roles 문서 또는 규칙을 확인하세요. UID를 직접 입력할 수도 있습니다.')
+      : '체험 모드에서는 임의의 시터 ID를 등록해볼 수 있습니다.';
     populateMappingForm();
   }
   function populateMappingForm(){
     const uid=$('editSitterUid').value,p=state.sitters.get(uid);
-    $('sitterUid').value=p?.uid||(cloudMode?'':DEMO_UID);
-    $('sitterUid').readOnly=!!p;
+    $('sitterUid').value=p?.uid||uid||(cloudMode?'':DEMO_UID);
+    $('sitterUid').readOnly=Boolean(p || (uid && state.roleSitterUids.has(uid)));
     $('mappingName').value=p?.name||'';$('mappingRate').value=p?rateForDate(todayKey(),p):15000;
     $('rateEffectiveDate').value=todayKey();
     $('assignChild1').checked=Boolean(p?.assignedChildren?.includes('child1'));
@@ -346,7 +369,7 @@
     const count=Number($('assignChild1').checked)+Number($('assignChild2').checked),uid=$('sitterUid').value.trim();
     $('mappingPreview').textContent=`시터 ID: ${uid||'입력 필요'} · 연결할 아이 ${count}명 · 시급 ${money(Number($('mappingRate').value)||0)}`;
   }
-  function openMapping(){if(!isAdmin())return;refreshMappingList();openModal('mappingModal');}
+  function openMapping(){openSettings('sitters');}
   async function saveMapping(){
     if(!isAdmin()||state.pending)return;
     const uid=$('sitterUid').value.trim(),name=$('mappingName').value.trim()||'시터님';
@@ -366,7 +389,8 @@
     try{
       if(cloudMode)await state.firebase.setDoc(state.firebase.doc(state.db,'sitters',uid),{name:next.name,hourlyRate:next.hourlyRate,rateHistory:next.rateHistory,assignedChildren:next.assignedChildren,active:next.active,updatedAt:state.firebase.serverTimestamp()});
       else{state.sitters.set(uid,next);state.activeSitterUid=uid;state.shifts=new Map([...state.localAllShifts.values()].filter(x=>x.sitterUid===uid).map(x=>[x.date,x]));saveLocal();}
-      closeModal('mappingModal');render();toast('시터 정보와 아이 연결을 저장했습니다.');
+      if(cloudMode){state.activeSitterUid=uid;}
+      closeModal('settingsModal');render();toast('시터 정보와 아이 연결을 저장했습니다.');
     }catch(e){handleError(e,'시터 정보 저장 실패 (시터 역할 UID 확인)');}finally{setPending(false);}
   }
   function rateHistoryCurrent(history){let r=history[0]?.rate||15000;for(const v of history)if(v.from<=todayKey())r=v.rate;return r;}
@@ -460,7 +484,7 @@
     for(const s of getPeriodShifts())rows.push([state.activeSitterUid,sitter()?.name||'',s.date,weekdays[parseDate(s.date).getDay()],s.extraMinutes?'하원 + 추가 돌봄':'하원','16:30',endTime(s.extraMinutes),2,s.extraMinutes/60,(120+s.extraMinutes)/60,rateForDate(s.date),amount(s),statusNames[effectiveStatus(s)],s.memo||'']);
     const blob=new Blob(['\uFEFF'+rows.map(r=>r.map(csvEscape).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8;'});
     const url=URL.createObjectURL(blob),a=document.createElement('a'),p=settlementPeriod();
-    a.href=url;a.download=`돌봄노트_${p.start}_${p.end}_${sitter()?.name||'시터'}_정산.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('CSV를 다운로드했습니다.');
+    a.href=url;a.download=`지호-수호_돌봄노트_${p.start}_${p.end}_${sitter()?.name||'시터'}_정산.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('CSV를 다운로드했습니다.');
   }
   function clearShiftSubscription(){if(state.unsubShifts)state.unsubShifts();state.unsubShifts=null;state.shifts=new Map();}
   function subscribeShifts(){
@@ -500,7 +524,7 @@
     render();
   }
   function selectSitter(uid){
-    if(!state.sitters.has(uid))return;
+    if(!state.sitters.has(uid)&&!state.roleSitterUids.has(uid))return;
     state.activeSitterUid=uid;
     if(cloudMode){subscribeShifts();subscribeNotices();subscribeMedications();}else{state.shifts=new Map([...state.localAllShifts.values()].filter(x=>x.sitterUid===uid).map(x=>[x.date,x]));saveLocal();render();}
   }
@@ -508,17 +532,27 @@
     const prev=state.activeSitterUid,oldIds=assignedIds().join(',');
     state.sitters=new Map(records.map(s=>[s.uid,s]));
     if(state.role==='sitter')state.activeSitterUid=state.user.uid;
-    else if(!state.sitters.has(state.activeSitterUid))state.activeSitterUid=state.sitters.keys().next().value||'';
+    else if(!state.sitters.has(state.activeSitterUid)&&!state.roleSitterUids.has(state.activeSitterUid))
+      state.activeSitterUid=state.roleSitterUids.values().next().value||state.sitters.keys().next().value||'';
     const changed=prev!==state.activeSitterUid||oldIds!==assignedIds().join(',');
     if(changed||!state.unsubShifts)subscribeShifts();else render();
     if(changed||!state.unsubNotices.length)subscribeNotices();
     if(changed||!state.unsubMedications.length)subscribeMedications();
   }
+  function onRoleSittersChange(uids){
+    state.roleSitterUids=new Set(uids);
+    if(state.role==='admin'&&!state.activeSitterUid){
+      state.activeSitterUid=uids[0]||state.sitters.keys().next().value||'';
+    }
+    render();
+  }
   function releaseSubscriptions(){
-    if(state.unsubSettings)state.unsubSettings();if(state.unsubSitters)state.unsubSitters();clearShiftSubscription();
+    if(state.unsubSettings)state.unsubSettings();if(state.unsubSitters)state.unsubSitters();
+    if(state.unsubRoles)state.unsubRoles();clearShiftSubscription();
     state.unsubNotices.forEach(fn=>fn());state.unsubNotices=[];
     state.unsubMedications.forEach(fn=>fn());state.unsubMedications=[];state.medications={};
-    state.unsubSettings=null;state.unsubSitters=null;state.notices={};state.sitters=new Map();
+    state.unsubSettings=null;state.unsubSitters=null;state.unsubRoles=null;
+    state.roleSitterUids=new Set();state.notices={};state.sitters=new Map();
   }
   async function initFirebase(){
     try{
@@ -544,6 +578,11 @@
             if(oldCutoff!==state.settings.payrollStartDay)render();else render();
           },error=>handleError(error,'기본 설정을 읽을 수 없습니다.'));
           if(role==='admin'){
+            // Firebase 로그인 계정과 Firestore 역할은 별도입니다. 역할이 sitter인 UID를 자동으로 표시합니다.
+            const q=firestore.query(firestore.collection(state.db,'roles'),firestore.where('role','==','sitter'));
+            state.unsubRoles=firestore.onSnapshot(q,snap=>{
+              onRoleSittersChange(snap.docs.map(doc=>doc.id));
+            },error=>handleError(error,'시터 계정 목록을 읽지 못했습니다. Firestore Rules를 업데이트해주세요.'));
             state.unsubSitters=firestore.onSnapshot(firestore.collection(state.db,'sitters'),snap=>{
               onSitterChanges(snap.docs.map(doc=>({uid:doc.id,...doc.data()})));
             },error=>handleError(error,'시터 목록을 읽을 수 없습니다.'));
@@ -568,9 +607,13 @@
   $('bulkScope').addEventListener('change',()=>{state.bulkScope=$('bulkScope').value==='calendar'?'calendar':'period';refreshBulk();});
   $('weekdaySelector').addEventListener('click',e=>{const b=e.target.closest('[data-weekday]');if(!b)return;const n=Number(b.dataset.weekday);if(state.bulkWeekdays.has(n))state.bulkWeekdays.delete(n);else state.bulkWeekdays.add(n);refreshBulk();});
   $('confirmBulk').addEventListener('click',confirmBulk);
-  $('settingsButton').addEventListener('click',openSettings);$('saveSettings').addEventListener('click',saveSettings);
+  $('settingsButton').addEventListener('click',()=>openSettings('basic'));
+  $('sitterSettingsShortcut').addEventListener('click',()=>openSettings('sitters'));
+  $('settingsBasicTab').addEventListener('click',()=>showSettingsTab('basic'));
+  $('settingsSitterTab').addEventListener('click',()=>showSettingsTab('sitters'));
+  $('saveSettings').addEventListener('click',saveSettings);
   $('payrollStartDay').addEventListener('change',refreshPayrollPreview);
-  $('mappingButton').addEventListener('click',openMapping);$('editSitterUid').addEventListener('change',populateMappingForm);
+  $('editSitterUid').addEventListener('change',populateMappingForm);
   ['sitterUid','mappingRate','assignChild1','assignChild2'].forEach(id=>$(id).addEventListener('input',refreshMappingPreview));
   $('saveMapping').addEventListener('click',saveMapping);
   $('medicationButton').addEventListener('click',openMedication);
