@@ -67,7 +67,12 @@ service cloud.firestore {
       allow get, list: if admin() || (assigned() && resource.data.sitterUid == request.auth.uid);
       allow create, update: if admin()
         && request.resource.data.keys().hasAll(['date','sitterUid','start','extraMinutes','status','memo','updatedAt'])
-        && request.resource.data.keys().hasOnly(['date','sitterUid','start','extraMinutes','status','memo','updatedAt'])
+        && request.resource.data.keys().hasOnly(['date','sitterUid','start','extraMinutes','status','memo','updatedAt','careType'])
+        && (!request.resource.data.keys().hasAny(['careType'])
+          || (request.resource.data.careType in ['pickup','extended','off']
+            && (request.resource.data.careType != 'pickup' || request.resource.data.extraMinutes == 0)
+            && (request.resource.data.careType != 'extended' || request.resource.data.extraMinutes >= 30)
+            && (request.resource.data.careType != 'off' || (request.resource.data.extraMinutes == 0 && request.resource.data.status == 'scheduled'))))
         && request.resource.data.sitterUid is string
         && exists(sitterPath(request.resource.data.sitterUid))
         && request.resource.data.date is string
