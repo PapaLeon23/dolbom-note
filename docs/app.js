@@ -64,8 +64,9 @@
     return Number(rate)||0;
   }
   const isDayOff = shift => shift?.careType==='off';
-  const careMinutes = shift => isDayOff(shift)?0:(120+(Number(shift.extraMinutes)||0));
-  const careKind = shift => isDayOff(shift)?'휴무':shift.extraMinutes>0?'하원 + 추가 돌봄':'하원';
+  const isShortened = shift => shift?.careType==='shortened'||(!shift?.careType && shift?.extraMinutes===-30);
+  const careMinutes = shift => isDayOff(shift)?0:isShortened(shift)?90:(120+(Number(shift.extraMinutes)||0));
+  const careKind = shift => isDayOff(shift)?'휴무':isShortened(shift)?'단축 돌봄':shift.extraMinutes>0?'하원 + 추가 돌봄':'하원';
   const amount = shift => (careMinutes(shift)/60)*rateForDate(shift.date);
   function effectiveStatus(shift){
     if(isDayOff(shift))return 'off';
@@ -217,7 +218,7 @@
     for(let d=1;d<=n;d++){
       const date=`${year}-${pad(m+1)}-${pad(d)}`,s=canViewWork()?state.shifts.get(date):null,status=s?effectiveStatus(s):'scheduled';
       const dow=new Date(year,m,d).getDay(),tag=dow===0?'sunday':dow===6?'saturday':'';
-      const kind=s?(isDayOff(s)?'휴무':(s.extraMinutes?`+${s.extraMinutes}분`:'하원')):'일정 없음';
+      const kind=s?(isDayOff(s)?'휴무':isShortened(s)?'단축':(s.extraMinutes>0?`+${s.extraMinutes}분`:'하원')):'일정 없음';
       html+=`<button type="button" class="day-cell ${tag} ${date>=period.start&&date<=period.end?'':'outside-period'} ${date===todayKey()?'today':''}" data-date="${date}" aria-label="${date}, ${kind}"><span class="day-num">${d}</span>${s?`<span class="day-tag ${status}">${kind}</span>${isDayOff(s)?'':`<span class="day-pay">${money(amount(s))}</span>`}`:(isAdmin()?'<span class="day-empty-plus">+</span>':'')}</button>`;
     }
     for(let i=0;i<(7-(first+n)%7)%7;i++)html+='<div class="day-cell empty" aria-hidden="true"></div>';
@@ -227,7 +228,7 @@
     if(!shifts.length){$('shiftList').innerHTML=`<div class="empty-list"><div class="empty-illustration">☼</div><strong>등록된 돌봄 일정이 없어요</strong><p>${isAdmin()?'시터를 선택하고 ‘월 돌봄표 만들기’로 등록하세요.':'이 정산기간에 연결된 돌봄 일정이 없습니다.'}</p></div>`;return;}
     $('shiftList').innerHTML=shifts.map(s=>{
       const d=parseDate(s.date),status=effectiveStatus(s);
-      return `<div class="shift-row" role="button" tabindex="0" data-date="${s.date}" aria-label="${s.date} 돌봄 상세보기"><div class="date-label">${d.getMonth()+1}월 ${d.getDate()}일 <span>(${weekdays[d.getDay()]})</span></div><div class="shift-type ${isDayOff(s)?'off':(s.extraMinutes?'extra':'')}">${careKind(s)}</div><div class="shift-time">${isDayOff(s)?'돌봄 없음':`16:30 – ${endTime(s.extraMinutes)}`}</div><div class="shift-amount">${money(amount(s))}</div><div><span class="status-chip ${status}">${statusNames[status]}</span></div><div class="row-chevron">›</div></div>`;
+      return `<div class="shift-row" role="button" tabindex="0" data-date="${s.date}" aria-label="${s.date} 돌봄 상세보기"><div class="date-label">${d.getMonth()+1}월 ${d.getDate()}일 <span>(${weekdays[d.getDay()]})</span></div><div class="shift-type ${isDayOff(s)?'off':isShortened(s)?'short':(s.extraMinutes>0?'extra':'')}">${careKind(s)}</div><div class="shift-time">${isDayOff(s)?'돌봄 없음':`16:30 – ${endTime(s.extraMinutes)}`}</div><div class="shift-amount">${money(amount(s))}</div><div><span class="status-chip ${status}">${statusNames[status]}</span></div><div class="row-chevron">›</div></div>`;
     }).join('');
   }
   function changeMonth(delta){state.month=new Date(state.month.getFullYear(),state.month.getMonth()+delta,1);render();}
@@ -235,7 +236,7 @@
     if(!validDate(date))return;
     const s=state.shifts.get(date);
     if(!isAdmin()&&(!canViewWork()||!s)){toast('해당 날짜에 등록된 돌봄 일정이 없습니다.');return;}
-    state.modal={date,careType:s?.careType||(s?.extraMinutes>0?'extended':'pickup'),extraMinutes:s?.extraMinutes||0,original:s?{...s}:null};
+    state.modal={date,careType:s?.careType||(s?.extraMinutes===-30?'shortened':s?.extraMinutes>0?'extended':'pickup'),extraMinutes:s?.extraMinutes||0,original:s?{...s}:null};
     $('shiftDate').value=date;
     $('shiftDate').min=s&&!date.startsWith(monthKey())?date:`${monthKey()}-01`;
     $('shiftDate').max=s&&!date.startsWith(monthKey())?date:`${monthKey()}-${pad(monthDays())}`;
@@ -243,27 +244,27 @@
     $('shiftStatus').value=s?.status||'scheduled';$('shiftMemo').value=s?.memo||'';
     $('dayModalTitle').textContent=`${parseDate(date).getMonth()+1}월 ${parseDate(date).getDate()}일 · ${weekdays[parseDate(date).getDay()]}요일`;
     $('deleteShift').hidden=!isAdmin()||!s;$('dayModalActions').hidden=!isAdmin();
-    for(const id of ['baseType','extraType','offType','decreaseExtra','increaseExtra','shiftStatus','shiftMemo'])$(id).disabled=!isAdmin();
+    for(const id of ['baseType','extraType','shortType','offType','shiftStatus','shiftMemo'])$(id).disabled=!isAdmin();
     refreshDayPreview();openModal('dayModal');
   }
   function refreshDayPreview(){
-    const extra=state.modal.extraMinutes,type=state.modal.careType,plus=type==='extended',off=type==='off';
-    $('baseType').classList.toggle('active',type==='pickup');$('extraType').classList.toggle('active',plus);$('offType').classList.toggle('active',off);
-    $('extraField').hidden=!plus;$('extraMinutesText').textContent=`${extra}분`;
-    $('decreaseExtra').disabled=!isAdmin()||extra<=30;$('increaseExtra').disabled=!isAdmin()||extra>=360;
+    const type=state.modal.careType,off=type==='off',short=type==='shortened',plus=type==='extended';
+    $('offType').classList.toggle('active',off);$('shortType').classList.toggle('active',short);
+    $('baseType').classList.toggle('active',type==='pickup');$('extraType').classList.toggle('active',plus);
     $('shiftStatusField').hidden=off;
     if(off)$('shiftStatus').value='scheduled';
+    const extra=off?0:short?-30:plus?state.modal.extraMinutes:0;
     $('previewTime').textContent=off?'휴무 · 돌봄 없음':`16:30 – ${endTime(extra)}`;
-    $('previewPay').textContent=off?'0원':money(((120+extra)/60)*rateForDate($('shiftDate').value));
+    $('previewPay').textContent=money((off?0:short?1.5:2+extra/60)*rateForDate($('shiftDate').value));
   }
   const shiftDocId=(uid,date)=>`${uid}__${date}`;
   async function saveShift(){
     if(!isAdmin()||state.pending||!sitter()){toast('먼저 시터를 등록·선택하세요.',true);return;}
     const date=$('shiftDate').value,period=settlementPeriod();
     if(!validDate(date)||(!date.startsWith(monthKey())&&(date<period.start||date>period.end))){toast('현재 달 또는 선택 정산기간의 날짜를 선택하세요.',true);return;}
-    const careType=state.modal.careType,extra=careType==='extended'?state.modal.extraMinutes:0,status=careType==='off'?'scheduled':$('shiftStatus').value,memo=$('shiftMemo').value.trim();
-    if(!['pickup','extended','off'].includes(careType)||!Number.isInteger(extra)||extra<0||extra>360||extra%30||(careType==='extended'&&extra<30)||!['scheduled','completed','paid'].includes(status)||memo.length>500)return;
-    const wasPaid=state.modal.original?.status==='paid',oldType=state.modal.original?.careType||(state.modal.original?.extraMinutes>0?'extended':'pickup');
+    const careType=state.modal.careType,extra=careType==='shortened'?-30:careType==='extended'?state.modal.extraMinutes:0,status=careType==='off'?'scheduled':$('shiftStatus').value,memo=$('shiftMemo').value.trim();
+    if(!['pickup','shortened','extended','off'].includes(careType)||!Number.isInteger(extra)||extra < -30||extra>360||extra%30||(careType==='extended'&&extra<30)||(careType==='shortened'&&extra!==-30)||!['scheduled','completed','paid'].includes(status)||memo.length>500)return;
+    const wasPaid=state.modal.original?.status==='paid',oldType=state.modal.original?.careType||(state.modal.original?.extraMinutes===-30?'shortened':state.modal.original?.extraMinutes>0?'extended':'pickup');
     if(wasPaid&&(oldType!==careType||state.modal.original.extraMinutes!==extra)&&!confirm('이미 지급 완료된 돌봄의 유형·시간이 변경되어 급여 내역에 영향을 줍니다. 계속할까요?'))return;
     const shift={date,sitterUid:state.activeSitterUid,start:'16:30',careType,extraMinutes:extra,status,memo};
     setPending(true);
@@ -484,7 +485,7 @@
   function downloadCSV(){
     if(!canViewWork()){toast('조회할 수 있는 돌봄표가 없습니다.',true);return;}
     const rows=[['시터 ID','시터 이름','날짜','요일','돌봄 유형','시작','종료','기본(시간)','추가(시간)','총 돌봄(시간)','적용 시급(원)','급여(원)','상태','메모']];
-    for(const s of getPeriodShifts())rows.push([state.activeSitterUid,sitter()?.name||'',s.date,weekdays[parseDate(s.date).getDay()],careKind(s),isDayOff(s)?'':'16:30',isDayOff(s)?'':endTime(s.extraMinutes),isDayOff(s)?0:2,isDayOff(s)?0:s.extraMinutes/60,careMinutes(s)/60,rateForDate(s.date),amount(s),statusNames[effectiveStatus(s)],s.memo||'']);
+    for(const s of getPeriodShifts())rows.push([state.activeSitterUid,sitter()?.name||'',s.date,weekdays[parseDate(s.date).getDay()],careKind(s),isDayOff(s)?'':'16:30',isDayOff(s)?'':endTime(s.extraMinutes),isDayOff(s)?0:isShortened(s)?1.5:2,isDayOff(s)?0:Math.max(0,s.extraMinutes)/60,careMinutes(s)/60,rateForDate(s.date),amount(s),statusNames[effectiveStatus(s)],s.memo||'']);
     const blob=new Blob(['\uFEFF'+rows.map(r=>r.map(csvEscape).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8;'});
     const url=URL.createObjectURL(blob),a=document.createElement('a'),p=settlementPeriod();
     a.href=url;a.download=`지호-수호_돌봄노트_${p.start}_${p.end}_${sitter()?.name||'시터'}_정산.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('CSV를 다운로드했습니다.');
@@ -629,11 +630,10 @@
   document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));
   document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id);}));
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAllModals();});
-  $('baseType').addEventListener('click',()=>{if(!isAdmin())return;state.modal.careType='pickup';state.modal.extraMinutes=0;refreshDayPreview();});
-  $('extraType').addEventListener('click',()=>{if(!isAdmin())return;state.modal.careType='extended';if(!state.modal.extraMinutes)state.modal.extraMinutes=30;refreshDayPreview();});
   $('offType').addEventListener('click',()=>{if(!isAdmin())return;state.modal.careType='off';state.modal.extraMinutes=0;refreshDayPreview();});
-  $('decreaseExtra').addEventListener('click',()=>{if(!isAdmin())return;state.modal.extraMinutes=Math.max(30,state.modal.extraMinutes-30);refreshDayPreview();});
-  $('increaseExtra').addEventListener('click',()=>{if(!isAdmin())return;state.modal.extraMinutes=Math.min(360,state.modal.extraMinutes+30);refreshDayPreview();});
+  $('shortType').addEventListener('click',()=>{if(!isAdmin())return;state.modal.careType='shortened';state.modal.extraMinutes=-30;refreshDayPreview();});
+  $('baseType').addEventListener('click',()=>{if(!isAdmin())return;state.modal.careType='pickup';state.modal.extraMinutes=0;refreshDayPreview();});
+  $('extraType').addEventListener('click',()=>{if(!isAdmin())return;state.modal.careType='extended';state.modal.extraMinutes=30;refreshDayPreview();});
   $('shiftDate').addEventListener('change',()=>{const next=$('shiftDate').value;if(!validDate(next)||!next.startsWith(monthKey()))return;closeModal('dayModal');openDay(next,true);});
   $('saveShift').addEventListener('click',saveShift);$('deleteShift').addEventListener('click',deleteShift);
   $('demoSwitch').addEventListener('click',e=>{
