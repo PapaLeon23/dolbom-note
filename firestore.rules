@@ -8,10 +8,10 @@ service cloud.firestore {
       return signedIn() && exists(rolePath(request.auth.uid))
         ? get(rolePath(request.auth.uid)).data.role : 'none';
     }
-    function admin() { return role() == 'admin'; }
-    function member() { return role() in ['admin', 'sitter']; }
+    function admin() { return role() in ['admin', 'admin_sitter']; }
+    function member() { return role() in ['admin', 'sitter', 'admin_sitter']; }
     function assigned() {
-      return signedIn() && role() == 'sitter'
+      return signedIn() && role() in ['sitter','admin_sitter']
         && exists(sitterPath(request.auth.uid))
         && get(sitterPath(request.auth.uid)).data.active == true
         && get(sitterPath(request.auth.uid)).data.assignedChildren.size() > 0;
@@ -21,12 +21,16 @@ service cloud.firestore {
         && childId in get(sitterPath(request.auth.uid)).data.assignedChildren;
     }
 
-    // Firebase 콘솔에서만 계정 역할 생성/수정. 웹페이지에서는 절대 못 바꿉니다.
+    // 계정 역할 관리는 기존 관리자만 가능. 본인의 관리자 권한은 스스로 해제할 수 없습니다.
     match /roles/{uid} {
       allow get: if signedIn() && (request.auth.uid == uid || admin());
-      // 관리자만 'sitter' 역할 계정 목록을 조회할 수 있습니다.
       allow list: if admin();
-      allow create, update, delete: if false;
+      allow create, update: if admin() && uid.size() >= 2 && uid.size() <= 128
+        && request.resource.data.keys().hasAll(['role'])
+        && request.resource.data.keys().hasOnly(['role'])
+        && request.resource.data.role in ['admin', 'sitter', 'admin_sitter']
+        && (request.auth.uid != uid || request.resource.data.role in ['admin','admin_sitter']);
+      allow delete: if false;
     }
 
     match /settings/{key} {
@@ -44,11 +48,11 @@ service cloud.firestore {
     }
 
     match /sitters/{uid} {
-      allow get: if admin() || (signedIn() && request.auth.uid == uid && role() == 'sitter');
+      allow get: if admin() || (signedIn() && request.auth.uid == uid && role() in ['sitter','admin_sitter']);
       allow list: if admin();
       allow create, update: if admin()
         && uid.size() <= 128
-        && exists(rolePath(uid)) && get(rolePath(uid)).data.role == 'sitter'
+        && exists(rolePath(uid)) && get(rolePath(uid)).data.role in ['sitter','admin_sitter']
         && request.resource.data.keys().hasAll(['name','hourlyRate','rateHistory','assignedChildren','active','updatedAt'])
         && request.resource.data.keys().hasOnly(['name','hourlyRate','rateHistory','assignedChildren','active','updatedAt'])
         && request.resource.data.name is string && request.resource.data.name.size() <= 50
