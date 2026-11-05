@@ -284,3 +284,10 @@ input,select,textarea{max-width:100%;min-width:0}
 .day-tag.scheduled:has(+ .day-pay){color:#318f82}
 .shift-type.short{color:#647cb6}
 @media(max-width:390px){.type-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.type-option{min-height:68px;padding:10px 8px}}
+
+/* 계정 권한 관리 탭 */
+.settings-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}
+.settings-tabs button{font-size:12px;padding:11px 5px}
+#settingsRolePanel .field-help{overflow-wrap:anywhere}
+#roleUid[readonly]{background:#f5f8f8;color:#667681}
+@media(max-width:390px){.settings-tabs button{font-size:11px;padding:10px 4px}}
