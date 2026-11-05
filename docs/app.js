@@ -13,7 +13,7 @@
   const els = Object.fromEntries([...document.querySelectorAll('[id]')].map(el => [el.id,el]));
   const state = {
     role:'admin',user:null,month:new Date(new Date().getFullYear(),new Date().getMonth(),1),
-    settings:{...DEFAULT_SETTINGS}, sitters:new Map(), roleSitterUids:new Set(), activeSitterUid:DEMO_UID,
+    settings:{...DEFAULT_SETTINGS}, sitters:new Map(), roleRecords:new Map(), roleSitterUids:new Set(), activeSitterUid:DEMO_UID, adminSelectedUid:'', accountRole:'admin',
     shifts:new Map(), localAllShifts:new Map(), notices:{}, medicationRecords:new Map(), medications:{}, medicationDate:"", medDraft:[], medLoadToken:0, unsubMedications:[], modal:{date:'',extraMinutes:0,original:null},
     firebase:null,auth:null,db:null,unsubSettings:null,unsubSitters:null,unsubRoles:null,unsubShifts:null,
     unsubNotices:[],historyMonths:6,pending:false,bulkScope:'period',bulkWeekdays:new Set([1,2,3,4,5]),periodInitialized:false
@@ -38,6 +38,7 @@
   }
   const todayKey = () => kstParts().date;
   const isAdmin = () => state.role==='admin';
+  const canManageAccounts = () => cloudMode && ['admin','admin_sitter'].includes(state.accountRole) && isAdmin();
   const sitter = () => state.sitters.get(state.activeSitterUid)||null;
   const assignedIds = () => Array.isArray(sitter()?.assignedChildren)?sitter().assignedChildren:[];
   const assignedNames = () => assignedIds().map(id=>state.settings[id] || (id==='child1'?'첫째':'둘째'));
@@ -86,7 +87,7 @@
     console.error(error);const code=String(error?.code||'');
     toast(code.includes('permission-denied')?'권한이 없습니다. Firestore 규칙·UID·역할을 확인해주세요.':code.includes('unavailable')?'네트워크 연결을 확인해주세요.':fallback,true);
   }
-  function setPending(p){state.pending=p;['saveShift','deleteShift','confirmBulk','saveSettings','saveMapping','saveNotice','deleteNotice','saveMedication','addMedication','loginButton'].forEach(id=>{if($(id))$(id).disabled=p;});}
+  function setPending(p){state.pending=p;['saveShift','deleteShift','confirmBulk','saveSettings','saveRole','saveMapping','saveNotice','deleteNotice','saveMedication','addMedication','loginButton'].forEach(id=>{if($(id))$(id).disabled=p;});}
   function showScreen(screen){$('authScreen').hidden=screen!=='auth';$('unassignedScreen').hidden=screen!=='unassigned';$('app').hidden=screen!=='app';}
   function openModal(id){$(id).hidden=false;const panel=$(id).querySelector('.modal-card');if(panel)panel.scrollTop=0;document.body.style.overflow='hidden';}
   function closeModal(id){$(id).hidden=true;if([...document.querySelectorAll('.modal-overlay')].every(el=>el.hidden))document.body.style.overflow='';}
@@ -128,8 +129,8 @@
     $('greeting').innerHTML=isAdmin()?'우리집 돌봄 일정 <span class="heading-heart">✳</span>':`${escapeHtml(person?.name||'시터님')}의 돌봄 일정 <span class="heading-heart">✳</span>`;
     $('subtitle').textContent=isAdmin()?'시터별 시급·돌봄 일정과 아이별 전달사항을 관리하세요.':'상단의 아이별 전달사항과 돌봄 일정·완료 급여를 확인하세요.';
     $('adminTools').hidden=!isAdmin();$('mobileAdd').hidden=!isAdmin();
-    $('roleIndicator').textContent=isAdmin()?'관리자 전용':'시터 조회 전용';
-    $('demoSwitch').hidden=cloudMode;$('demoBanner').hidden=cloudMode;$('logoutButton').hidden=!cloudMode;
+    $('roleIndicator').textContent=state.accountRole==='admin_sitter'?'관리자·시터 겸용':(isAdmin()?'관리자 전용':'시터 조회 전용');
+    $('demoSwitch').hidden=cloudMode&&state.accountRole!=='admin_sitter';$('demoBanner').hidden=cloudMode;$('logoutButton').hidden=!cloudMode;
     document.querySelectorAll('.view-toggle').forEach(b=>b.classList.toggle('active',b.dataset.role===state.role));
     $('sitterSelectorWrap').hidden=!isAdmin();
     if(isAdmin()){
@@ -314,18 +315,20 @@
     }catch(e){handleError(e,'돌봄표 생성 실패');}finally{setPending(false);}
   }
   function showSettingsTab(tab){
-    const isSitter=tab==='sitters';
-    $('settingsBasicTab').classList.toggle('active',!isSitter);
-    $('settingsSitterTab').classList.toggle('active',isSitter);
-    $('settingsBasicTab').setAttribute('aria-selected',String(!isSitter));
-    $('settingsSitterTab').setAttribute('aria-selected',String(isSitter));
-    $('settingsBasicPanel').hidden=isSitter;
-    $('settingsSitterPanel').hidden=!isSitter;
-    if(isSitter)refreshMappingList();
+    if(tab==='roles'&&!cloudMode)tab='basic';
+    for(const [name,button,panel] of [['basic','settingsBasicTab','settingsBasicPanel'],['sitters','settingsSitterTab','settingsSitterPanel'],['roles','settingsRoleTab','settingsRolePanel']]){
+      const active=tab===name;
+      $(button).classList.toggle('active',active);
+      $(button).setAttribute('aria-selected',String(active));
+      $(panel).hidden=!active;
+    }
+    if(tab==='sitters')refreshMappingList();
+    if(tab==='roles')refreshRoleList();
   }
   function openSettings(tab='basic'){
     if(!isAdmin())return;
     $('child1').value=state.settings.child1;$('child2').value=state.settings.child2;$('payrollStartDay').value=String(state.settings.payrollStartDay);
+    $('settingsRoleTab').hidden=!cloudMode;
     refreshPayrollPreview();showSettingsTab(tab);openModal('settingsModal');
   }
   function refreshPayrollPreview(){
@@ -343,6 +346,46 @@
       else{state.settings=next;saveLocal();}
       closeModal('settingsModal');render();toast('기본 설정을 저장했습니다.');
     }catch(e){handleError(e,'설정 저장 실패');}finally{setPending(false);}
+  }
+
+  const roleLabel=value=>({admin:'관리자',sitter:'시터',admin_sitter:'관리자+시터'})[value]||'미설정';
+  function refreshRoleList(){
+    if(!cloudMode)return;
+    const current=$('editRoleUid').value;
+    const entries=[...state.roleRecords.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+    $('editRoleUid').innerHTML='<option value="">+ UID 직접 입력</option>'+entries.map(([uid,role])=>{
+      const name=state.sitters.get(uid)?.name||(uid===state.user?.uid?'내 계정':'등록 계정');
+      return `<option value="${escapeHtml(uid)}">${escapeHtml(name)} · ${escapeHtml(roleLabel(role))} (${escapeHtml(uid.slice(0,8))}…)</option>`;
+    }).join('');
+    $('editRoleUid').value=state.roleRecords.has(current)?current:(state.roleRecords.has(state.user?.uid)?state.user.uid:'');
+    populateRoleForm();
+  }
+  function populateRoleForm(){
+    const uid=$('editRoleUid').value;
+    $('roleUid').value=uid;
+    $('roleUid').readOnly=Boolean(uid);
+    $('roleValue').value=state.roleRecords.get(uid)||'sitter';
+  }
+  async function saveRole(){
+    if(!canManageAccounts()||state.pending)return;
+    const uid=$('roleUid').value.trim(),value=$('roleValue').value;
+    if(!/^[A-Za-z0-9_-]{2,128}$/.test(uid)){toast('Firebase 사용자 UID를 확인해주세요.',true);return;}
+    if(!['admin','sitter','admin_sitter'].includes(value))return;
+    const before=state.roleRecords.get(uid);
+    if(before===value){toast('이미 선택한 권한으로 설정되어 있습니다.');return;}
+    if(uid===state.user.uid&&value==='sitter'){toast('본인의 관리자 권한은 해제할 수 없습니다.',true);return;}
+    const explain=`${uid.slice(0,10)}… 계정의 권한을 '${roleLabel(value)}'로 ${before?'변경':'등록'}할까요?`;
+    if(!confirm(explain+(value!=='sitter'?'\n관리자 권한을 가진 계정은 모든 돌봄 일정과 급여를 변경할 수 있습니다.':'')))return;
+    setPending(true);
+    try{
+      const ref=state.firebase.doc(state.db,'roles',uid);
+      await state.firebase.setDoc(ref,{role:value});
+      if(uid===state.user.uid){
+        window.location.reload();
+        return;
+      }
+      toast('권한을 저장했습니다. 변경된 계정은 다시 로그인하면 적용됩니다.');
+    }catch(error){handleError(error,'계정 권한 저장 실패');}finally{setPending(false);}
   }
   function refreshMappingList(){
     const old=$('editSitterUid').value;
@@ -543,11 +586,13 @@
     if(changed||!state.unsubNotices.length)subscribeNotices();
     if(changed||!state.unsubMedications.length)subscribeMedications();
   }
-  function onRoleSittersChange(uids){
+  function onRoleRecordsChange(records){
+    state.roleRecords=new Map(records.map(r=>[r.uid,r.role]));
+    const uids=records.filter(r=>['sitter','admin_sitter'].includes(r.role)).map(r=>r.uid);
     state.roleSitterUids=new Set(uids);
-    if(state.role==='admin'&&!state.activeSitterUid){
+    if(state.role==='admin'&&!state.activeSitterUid)
       state.activeSitterUid=uids[0]||state.sitters.keys().next().value||'';
-    }
+    if($('settingsRolePanel')&&!$('settingsRolePanel').hidden)refreshRoleList();
     render();
   }
   function releaseSubscriptions(){
@@ -556,7 +601,7 @@
     state.unsubNotices.forEach(fn=>fn());state.unsubNotices=[];
     state.unsubMedications.forEach(fn=>fn());state.unsubMedications=[];state.medications={};
     state.unsubSettings=null;state.unsubSitters=null;state.unsubRoles=null;
-    state.roleSitterUids=new Set();state.notices={};state.sitters=new Map();
+    state.roleRecords=new Map();state.roleSitterUids=new Set();state.notices={};state.sitters=new Map();
   }
   async function initFirebase(){
     try{
@@ -572,8 +617,10 @@
           const roleDoc=await firestore.getDoc(firestore.doc(state.db,'roles',user.uid));
           if(state.user?.uid!==user.uid)return;
           const role=roleDoc.data()?.role;
-          if(!['admin','sitter'].includes(role)){state.role='none';$('uidText').textContent=user.uid;showScreen('unassigned');return;}
-          state.role=role;state.periodInitialized=false;state.activeSitterUid=role==='sitter'?user.uid:'';
+          if(!['admin','sitter','admin_sitter'].includes(role)){state.role='none';$('uidText').textContent=user.uid;showScreen('unassigned');return;}
+          state.accountRole=role;
+          state.role=role==='sitter'?'sitter':'admin';
+          state.periodInitialized=false;state.activeSitterUid=role==='sitter'?user.uid:'';
           showScreen('app');
           state.unsubSettings=firestore.onSnapshot(firestore.doc(state.db,'settings','main'),snap=>{
             const oldCutoff=state.settings.payrollStartDay;
@@ -581,12 +628,11 @@
             if(!state.periodInitialized){state.month=settlementMonthForToday();state.periodInitialized=true;}
             if(oldCutoff!==state.settings.payrollStartDay)render();else render();
           },error=>handleError(error,'기본 설정을 읽을 수 없습니다.'));
-          if(role==='admin'){
-            // Firebase 로그인 계정과 Firestore 역할은 별도입니다. 역할이 sitter인 UID를 자동으로 표시합니다.
-            const q=firestore.query(firestore.collection(state.db,'roles'),firestore.where('role','==','sitter'));
-            state.unsubRoles=firestore.onSnapshot(q,snap=>{
-              onRoleSittersChange(snap.docs.map(doc=>doc.id));
-            },error=>handleError(error,'시터 계정 목록을 읽지 못했습니다. Firestore Rules를 업데이트해주세요.'));
+          if(role==='admin'||role==='admin_sitter'){
+            // 관리자에게 계정 권한 전체를 표시하고, sitter 및 admin_sitter를 시터 목록에 포함합니다.
+            state.unsubRoles=firestore.onSnapshot(firestore.collection(state.db,'roles'),snap=>{
+              onRoleRecordsChange(snap.docs.map(doc=>({uid:doc.id,role:doc.data()?.role})));
+            },error=>handleError(error,'계정 권한 목록을 읽지 못했습니다. Firestore Rules를 업데이트해주세요.'));
             state.unsubSitters=firestore.onSnapshot(firestore.collection(state.db,'sitters'),snap=>{
               onSitterChanges(snap.docs.map(doc=>({uid:doc.id,...doc.data()})));
             },error=>handleError(error,'시터 목록을 읽을 수 없습니다.'));
@@ -614,6 +660,9 @@
   $('sitterSettingsShortcut').addEventListener('click',()=>openSettings('sitters'));
   $('settingsBasicTab').addEventListener('click',()=>showSettingsTab('basic'));
   $('settingsSitterTab').addEventListener('click',()=>showSettingsTab('sitters'));
+  $('settingsRoleTab').addEventListener('click',()=>showSettingsTab('roles'));
+  $('editRoleUid').addEventListener('change',populateRoleForm);
+  $('saveRole').addEventListener('click',saveRole);
   $('saveSettings').addEventListener('click',saveSettings);
   $('payrollStartDay').addEventListener('change',refreshPayrollPreview);
   $('editSitterUid').addEventListener('change',populateMappingForm);
@@ -637,7 +686,18 @@
   $('shiftDate').addEventListener('change',()=>{const next=$('shiftDate').value;if(!validDate(next)||!next.startsWith(monthKey()))return;closeModal('dayModal');openDay(next,true);});
   $('saveShift').addEventListener('click',saveShift);$('deleteShift').addEventListener('click',deleteShift);
   $('demoSwitch').addEventListener('click',e=>{
-    const b=e.target.closest('[data-role]');if(!b||cloudMode)return;
+    const b=e.target.closest('[data-role]');if(!b||!['admin','sitter'].includes(b.dataset.role))return;
+    if(cloudMode){
+      if(state.accountRole!=='admin_sitter'||state.role===b.dataset.role)return;
+      if(b.dataset.role==='sitter'&&!state.sitters.has(state.user.uid)){
+        toast('시터 조회 화면을 사용하려면 설정 → 시터 관리에서 본인 UID와 담당 아이를 먼저 연결해주세요.',true);return;
+      }
+      if(state.role==='admin')state.adminSelectedUid=state.activeSitterUid;
+      state.role=b.dataset.role;
+      state.activeSitterUid=state.role==='sitter'?state.user.uid:(state.adminSelectedUid||state.roleSitterUids.values().next().value||'');
+      closeAllModals();subscribeShifts();subscribeNotices();subscribeMedications();
+      return;
+    }
     state.role=b.dataset.role;const selected=state.role==='sitter'?DEMO_UID:(state.activeSitterUid||DEMO_UID);
     state.activeSitterUid=selected;state.shifts=new Map([...state.localAllShifts.values()].filter(x=>x.sitterUid===selected).map(x=>[x.date,x]));closeAllModals();render();
   });
