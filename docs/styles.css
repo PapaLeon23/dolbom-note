@@ -275,3 +275,12 @@ input,select,textarea{max-width:100%;min-width:0}
   .calendar-header .calendar-controls h2{font-size:19px;min-width:125px}
   .calendar-header>.calendar-side-spacer{display:none}
 }
+
+/* 4가지 고정 돌봄 유형: 휴무·단축·하원·추가, 모바일에서도 2열 */
+.type-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.type-option{min-width:0;min-height:70px;padding:12px 13px}
+#shortType.active{background:#eff5ff;border-color:#a5bcea}
+#shortType.active strong{color:#5973ac}
+.day-tag.scheduled:has(+ .day-pay){color:#318f82}
+.shift-type.short{color:#647cb6}
+@media(max-width:390px){.type-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.type-option{min-height:68px;padding:10px 8px}}
